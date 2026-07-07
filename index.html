@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>万年历时钟</title>
 <style>
 *{
@@ -16,7 +16,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px 16px;
   position: relative;
   overflow: hidden;
 }
@@ -37,60 +37,78 @@ body {
 }
 .wrap {
   width: 100%;
-  max-width: 560px;
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(14px);
-  border-radius: 26px;
-  padding: 36px 28px;
-  border: 1px solid rgba(255,255,255,0.15);
+  max-width: 620px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  border-radius: 30px;
+  padding: 42px 32px;
+  border: 1px solid rgba(255,255,255,0.18);
   color: #fff;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.3);
 }
+/* 主时钟 */
 .clock-big {
-  font-size: 68px;
-  font-weight: bold;
+  font-size: 60px;
+  font-weight: 700;
   text-align: center;
-  letter-spacing: 5px;
-  margin-bottom: 14px;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
 }
+/* 公历农历日期区域 */
 .date-box {
   text-align: center;
   font-size: 20px;
-  line-height: 1.7;
-  margin-bottom: 28px;
+  line-height: 1.8;
+  margin-bottom: 40px;
 }
 .lunar-text {
-  opacity: 0.9;
-  margin-top: 6px;
+  opacity: 0.88;
+  margin-top: 8px;
+  font-size: 19px;
 }
+/* 天气信息网格 自适应 */
 .weather-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 48px;
+}
+@media (max-width:520px){
+  .weather-row{
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .clock-big{
+    font-size: 46px;
+  }
 }
 .weather-card {
-  background: rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 16px 10px;
+  background: rgba(255,255,255,0.11);
+  border-radius: 20px;
+  padding: 20px 10px;
   text-align: center;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .weather-card h4 {
   font-size: 14px;
-  opacity: 0.8;
-  margin-bottom: 8px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
 }
 .weather-card p {
   font-size: 24px;
   font-weight: 600;
 }
-.tips-box {
-  background: rgba(255,255,255,0.14);
-  border-radius: 16px;
-  padding: 20px;
+/* 底部文字 */
+.footer-text {
   text-align: center;
-  font-size: 17px;
-  line-height: 1.7;
+  font-size: 28px;
+  letter-spacing: 8px;
+  font-weight: bold;
+  opacity: 0.9;
+  text-shadow: 0 0 12px rgba(255,255,255,0.25);
 }
 </style>
 </head>
@@ -106,6 +124,10 @@ body {
 
   <div class="weather-row">
     <div class="weather-card">
+      <h4>归属地</h4>
+      <p>河南濮阳</p>
+    </div>
+    <div class="weather-card">
       <h4>实时温度</h4>
       <p id="temp">加载中</p>
     </div>
@@ -119,8 +141,8 @@ body {
     </div>
   </div>
 
-  <div class="tips-box">
-    💡 菜菜提示：<span id="tipContent">心静平和，万事从容</span>
+  <div class="footer-text">
+    霸道南的爱
   </div>
 </div>
 
@@ -207,22 +229,6 @@ async function getWeather() {
 // 立即执行一次，30分钟刷新
 getWeather();
 setInterval(getWeather, 1800000);
-
-// 4. 温馨提示轮播文案
-const tipList = [
-  "心静少躁，凡事放宽心，得失随缘",
-  "高温天气多喝温水，外出做好防晒",
-  "早睡早起养护身心，少熬夜多静坐",
-  "心怀善意，每一天都是好时节",
-  "久坐记得起身活动，舒缓肩颈疲劳",
-  "遇事不要急躁，慢一点思路更清晰"
-];
-let tipIndex = 0;
-function switchTip() {
-  tipIndex = (tipIndex + 1) % tipList.length;
-  document.getElementById("tipContent").innerText = tipList[tipIndex];
-}
-setInterval(switchTip, 300000);
 </script>
 </body>
 </html>
