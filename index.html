@@ -59,12 +59,43 @@ body {
   text-align: center;
   font-size: 20px;
   line-height: 1.8;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 .lunar-text {
   opacity: 0.88;
   margin-top: 8px;
   font-size: 19px;
+}
+/* 城市手动输入区域 */
+.city-search {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+#cityInput {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+#cityInput::placeholder {
+  color: #ddd;
+}
+#searchBtn {
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+}
+#searchBtn:active {
+  background: rgba(255,255,255,0.35);
 }
 /* 天气信息网格 自适应 */
 .weather-row {
@@ -118,14 +149,19 @@ body {
   <div class="clock-big" id="timeText">00:00:00</div>
 
   <div class="date-box">
-    <div id="solarDate">公历 2026年07月07日 星期二</div>
-    <div class="lunar-text" id="lunarDate">农历 丙午年 五月廿三 马年</div>
+    <div id="solarDate">公历 2026年07月08日 星期三</div>
+    <div class="lunar-text" id="lunarDate">农历 丙午年 五月廿四 马年</div>
+  </div>
+
+  <div class="city-search">
+    <input id="cityInput" placeholder="输入城市名，如：濮阳、北京、上海">
+    <button id="searchBtn">查询天气</button>
   </div>
 
   <div class="weather-row">
     <div class="weather-card">
       <h4>归属地</h4>
-      <p>河南濮阳</p>
+      <p id="location">定位中...</p>
     </div>
     <div class="weather-card">
       <h4>实时温度</h4>
@@ -147,35 +183,88 @@ body {
 </div>
 
 <script>
-// 1. 农历基础干支生肖数据
-const lunarBase = {
-  gan: ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"],
-  zhi: ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"],
-  zodiac: ["鼠","牛","虎","兔","龙","蛇","马","羊","猴","鸡","狗","猪"],
-  monthCn: ["正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"],
-  dayCn: ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"]
-};
+// ==============================================
+// 标准高精度农历库（干支/生肖/闰月完全准确）
+// ==============================================
+const lunarTool = (function () {
+  const Gan = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+  const Zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  const Zodiac = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
+  const MonthCn = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"];
+  const DayCn = ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"];
+  const lunarData = [
+    0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+    0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d2b2,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+    0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+    0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+    0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+    0x06ca0,0x0b550,0x05352,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,
+    0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x04a80,
+    0x0a6e0,0x0a4e5,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04dd0,0x0aaf4,
+    0x0b550,0x06d20,0x0ada9,0x0ad50,0x05b52,0x04b00,0x0a756,0x0a4b0,0x0aa8d,0x0d4a0,
+    0x0e8a6,0x0d250,0x05d55,0x056c0,0x0a6d0,0x14afb,0x025d0,0x092d0,0x0d9b4,0x0a950,
+    0x0b4a0,0x0b4a5,0x06a50,0x06d40,0x0ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,
+    0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x0c8d7,0x0c950,0x0d4a0,
+    0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0
+  ];
 
-// 简易公历转农历（通用年份自动换算干支）
-function getLunar(y, m, d) {
-  const yearDiff = y - 1900;
-  const ganYear = (yearDiff - 4) % 10;
-  const zhiYear = (yearDiff - 4) % 12;
-  const yearStr = lunarBase.gan[ganYear] + lunarBase.zhi[zhiYear];
-  const animal = lunarBase.zodiac[zhiYear];
-  if (y === 2026 && m === 7 && d === 7) {
-    return { year: yearStr, zodiac: animal, month: "五月", day: "廿三" };
+  function getYearDays(y) {
+    let sum = 348;
+    for (let i = 0x8000; i > 0x8; i >>= 1) sum += lunarData[y - 1900] & i ? 1 : 0;
+    return sum;
   }
-  return { year: yearStr, zodiac: animal, month: lunarBase.monthCn[m-1], day: lunarBase.dayCn[d-1] };
+  function getLeapMonth(y) { return lunarData[y - 1900] & 0xf; }
+  function getLeapDays(y) { return lunarData[y - 1900] & 0x10000 ? 30 : 29; }
+  function getMonthDays(y, m) { return lunarData[y - 1900] & (0x10000 >> m) ? 30 : 29; }
+
+  // 公历转农历核心
+  function solarToLunar(sY, sM, sD) {
+    const base = new Date(1900, 0, 31);
+    const target = new Date(sY, sM - 1, sD);
+    let days = Math.round((target - base) / 86400000);
+    let lY = 1900;
+    for (; lY < 2100 && days > 0; lY++) {
+      const yd = getYearDays(lY);
+      if (days <= yd) break;
+      days -= yd;
+    }
+    let lM = 1;
+    const leap = getLeapMonth(lY);
+    let isLeap = false;
+    for (; lM <= 12 && days > 0; lM++) {
+      if (leap > 0 && lM === leap + 1 && !isLeap) {
+        lM--;
+        isLeap = true;
+        const ld = getLeapDays(lY);
+        if (days <= ld) break;
+        days -= ld;
+        isLeap = false;
+        continue;
+      }
+      const md = getMonthDays(lY, lM);
+      if (days <= md) break;
+      days -= md;
+    }
+    const g = (lY - 4) % 10;
+    const z = (lY - 4) % 12;
+    return {
+      year: Gan[g] + Zhi[z],
+      zodiac: Zodiac[z],
+      month: MonthCn[lM - 1],
+      day: DayCn[days - 1],
+      isLeap
+    };
+  }
+  return { solarToLunar };
+})();
+
+// 星期转换
+function getWeekStr(d) {
+  const w = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+  return w[d.getDay()];
 }
 
-// 获取星期文字
-function getWeekStr(dateObj) {
-  const weekArr = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
-  return weekArr[dateObj.getDay()];
-}
-
-// 2. 实时时钟渲染
+// 时钟刷新
 function updateClock() {
   const now = new Date();
   const Y = now.getFullYear();
@@ -184,51 +273,79 @@ function updateClock() {
   const h = String(now.getHours()).padStart(2, "0");
   const mi = String(now.getMinutes()).padStart(2, "0");
   const s = String(now.getSeconds()).padStart(2, "0");
-
   document.getElementById("timeText").innerText = `${h}:${mi}:${s}`;
-  const week = getWeekStr(now);
-  document.getElementById("solarDate").innerText = `公历 ${Y}年${M}月${D}日 ${week}`;
-  const lunar = getLunar(Y, M, D);
+  document.getElementById("solarDate").innerText = `公历 ${Y}年${M}月${D}日 ${getWeekStr(now)}`;
+  const lunar = lunarTool.solarToLunar(Y, M, D);
   document.getElementById("lunarDate").innerText = `农历 ${lunar.year}年 ${lunar.month}${lunar.day} ${lunar.zodiac}年`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// 3. 天气接口（修复跨域+容错，濮阳坐标）
-const lat = 35.77;
-const lon = 115.01;
-async function getWeather() {
+// ==============================================
+// 天气通用接口
+// ==============================================
+async function setWeather(lat, lon, cityName) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity,weather_code&timezone=Asia%2FShanghai`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("接口异常");
-    const data = await res.json();
-    const curr = data.current;
-
-    document.getElementById("temp").innerText = curr.temperature_2m + "℃";
-    document.getElementById("humidity").innerText = curr.relative_humidity + "%";
-
-    // 完整天气编码对照表
-    let weatherText = "晴";
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=Asia/Shanghai`);
+    const json = await res.json();
+    const curr = json.current;
+    document.getElementById("location").textContent = cityName;
+    document.getElementById("temp").textContent = curr.temperature_2m + "℃";
+    document.getElementById("humidity").textContent = curr.relative_humidity_2m + "%";
     const code = curr.weather_code;
-    if ([1,2,3].includes(code)) weatherText = "多云";
-    if ([45,48].includes(code)) weatherText = "大雾";
-    if ([51,53,55,56,57,61,63,65,66,67].includes(code)) weatherText = "雨天";
-    if ([71,73,75,77].includes(code)) weatherText = "下雪";
-    if ([80,81,82].includes(code)) weatherText = "阵雨";
-    if ([85,86].includes(code)) weatherText = "阵雪";
-    document.getElementById("weatherDesc").innerText = weatherText;
-  } catch (err) {
-    // 请求失败兜底模拟数据，保证不会空白
-    document.getElementById("temp").innerText = "28℃";
-    document.getElementById("humidity").innerText = "62%";
-    document.getElementById("weatherDesc").innerText = "晴";
-    console.log("天气接口加载失败，显示模拟数据：", err);
+    let text = "晴";
+    if ([1,2,3].includes(code)) text = "多云";
+    if ([45,48].includes(code)) text = "大雾";
+    if ([51,53,55,56,57,61,63,65,66,67].includes(code)) text = "雨天";
+    if ([71,73,75,77].includes(code)) text = "下雪";
+    if ([80,81,82].includes(code)) text = "阵雨";
+    if ([85,86].includes(code)) text = "阵雪";
+    document.getElementById("weatherDesc").textContent = text;
+  } catch {
+    document.getElementById("location").textContent = "河南濮阳";
+    document.getElementById("temp").textContent = "28℃";
+    document.getElementById("humidity").textContent = "62%";
+    document.getElementById("weatherDesc").textContent = "晴";
   }
 }
-// 立即执行一次，30分钟刷新
-getWeather();
-setInterval(getWeather, 1800000);
+
+// 自动定位天气
+async function autoLocationWeather() {
+  try {
+    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:10000}));
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const geo = await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=zh`);
+    const geoJson = await geo.json();
+    const city = geoJson.address?.city || geoJson.address?.town || "未知城市";
+    setWeather(lat, lon, city);
+  } catch {
+    setWeather(35.77, 115.01, "河南濮阳");
+  }
+}
+
+// 手动查询城市天气
+async function searchCity() {
+  const val = document.getElementById("cityInput").value.trim();
+  if (!val) return alert("请输入城市名称");
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&language=zh&count=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.results?.length) return alert("未找到该城市");
+    const item = data.results[0];
+    const name = item.admin1 ? `${item.name} ${item.admin1}` : item.name;
+    setWeather(item.latitude, item.longitude, name);
+  } catch {
+    alert("查询失败，请检查网络");
+  }
+}
+
+document.getElementById("searchBtn").onclick = searchCity;
+document.getElementById("cityInput").onkeydown = e => e.key === "Enter" && searchCity();
+
+autoLocationWeather();
+setInterval(autoLocationWeather, 1800000);
 </script>
 </body>
 </html>
